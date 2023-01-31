@@ -25,6 +25,18 @@ import (
 func NewCmdCopy() *cobra.Command {
 	recursive := false
 	jobs := 1
+	year := 0
+	month := 0
+	day := 0
+	hour := 0
+	minute := 0
+	second := 0
+	year2 := 0
+	month2 := 0
+	day2 := 0
+	hour2 := 0
+	minute2 := 0
+	second2 := 0
 	cmd := &cobra.Command{
 		Use:     "copy SRC DST",
 		Aliases: []string{"cp"},
@@ -34,7 +46,7 @@ func NewCmdCopy() *cobra.Command {
 			src, dst := args[0], args[1]
 			ctx := cc.Context()
 			if recursive {
-				return gcrane.CopyRepository(ctx, src, dst, gcrane.WithJobs(jobs), gcrane.WithUserAgent(userAgent()), gcrane.WithContext(ctx))
+				return gcrane.CopyRepository(ctx, src, dst, year, month, day, hour, minute, second, year2, month2, day2, hour2, minute2, second2, gcrane.WithJobs(jobs), gcrane.WithUserAgent(userAgent()), gcrane.WithContext(ctx))
 			}
 			return gcrane.Copy(src, dst, gcrane.WithUserAgent(userAgent()), gcrane.WithContext(ctx))
 		},
@@ -42,6 +54,18 @@ func NewCmdCopy() *cobra.Command {
 
 	cmd.Flags().BoolVarP(&recursive, "recursive", "r", false, "Whether to recurse through repos")
 	cmd.Flags().IntVarP(&jobs, "jobs", "j", runtime.GOMAXPROCS(0), "The maximum number of concurrent copies")
+	cmd.Flags().IntVarP(&year, "year", "y", 0, "year")
+	cmd.Flags().IntVarP(&month, "month", "o", 0, "month")
+	cmd.Flags().IntVarP(&day, "day", "d", 0, "day")
+	cmd.Flags().IntVarP(&hour, "hour", "g", 0, "hour")
+	cmd.Flags().IntVarP(&minute, "minute", "m", 0, "minute")
+	cmd.Flags().IntVarP(&second, "second", "s", 0, "second")
+	cmd.Flags().IntVarP(&year2, "year2", "z", 0, "year")
+	cmd.Flags().IntVarP(&month2, "month2", "p", 0, "month")
+	cmd.Flags().IntVarP(&day2, "day2", "e", 0, "day")
+	cmd.Flags().IntVarP(&hour2, "hour2", "i", 0, "hour")
+	cmd.Flags().IntVarP(&minute2, "minute2", "n", 0, "minute")
+	cmd.Flags().IntVarP(&second2, "second2", "t", 0, "second")
 
 	return cmd
 }

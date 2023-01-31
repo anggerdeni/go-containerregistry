@@ -69,9 +69,9 @@ func Copy(src, dst string, opts ...Option) error {
 
 // CopyRepository copies everything from the src GCR repository to the
 // dst GCR repository.
-func CopyRepository(ctx context.Context, src, dst string, opts ...Option) error {
+func CopyRepository(ctx context.Context, src, dst string, year, month, day, hour, minute, second, year2, month2, day2, hour2, minute2, second2 int, opts ...Option) error {
 	o := makeOptions(opts...)
-	return recursiveCopy(ctx, src, dst, o)
+	return recursiveCopy(ctx, src, dst, o, year, month, day, hour, minute, second, year2, month2, day2, hour2, minute2, second2)
 }
 
 type task struct {
@@ -107,7 +107,7 @@ func newCopier(src, dst string, o *options) (*copier, error) {
 }
 
 // recursiveCopy copies images from repo src to repo dst.
-func recursiveCopy(ctx context.Context, src, dst string, o *options) error {
+func recursiveCopy(ctx context.Context, src, dst string, o *options, year, month, day, hour, minute, second, year2, month2, day2, hour2, minute2, second2 int) error {
 	c, err := newCopier(src, dst, o)
 	if err != nil {
 		return err
@@ -128,7 +128,7 @@ func recursiveCopy(ctx context.Context, src, dst string, o *options) error {
 
 		// If we hit an error when trying to diff the repo, re-diff with backoff.
 		if err := backoffErrors(GCRBackoff(), func() error {
-			return c.copyRepo(ctx, repo, tags)
+			return c.copyRepo(ctx, repo, tags, year, month, day, hour, minute, second, year2, month2, day2, hour2, minute2, second2)
 		}); err != nil {
 			return fmt.Errorf("failed to copy repo %q: %w", repo, err)
 		}
@@ -167,7 +167,7 @@ func recursiveCopy(ctx context.Context, src, dst string, o *options) error {
 // copyRepo figures out the name for our destination repo (newRepo), lists the
 // contents of newRepo, calculates the diff of what needs to be copied, then
 // starts a goroutine to copy each image we need, and waits for them to finish.
-func (c *copier) copyRepo(ctx context.Context, oldRepo name.Repository, tags *google.Tags) error {
+func (c *copier) copyRepo(ctx context.Context, oldRepo name.Repository, tags *google.Tags, year, month, day, hour, minute, second, year2, month2, day2, hour2, minute2, second2 int) error {
 	newRepo, err := c.rename(oldRepo)
 	if err != nil {
 		return fmt.Errorf("rename failed: %w", err)
@@ -175,6 +175,20 @@ func (c *copier) copyRepo(ctx context.Context, oldRepo name.Repository, tags *go
 
 	// Figure out what we actually need to copy.
 	want := tags.Manifests
+	newWant := make(map[string]google.ManifestInfo)
+
+	for k, v := range want {
+		startTime := time.Date(year, time.Month(month), day, hour, minute, second, 0, time.UTC)
+		endTime := time.Date(year2, time.Month(month2), day2, hour2, minute2, second2, 0, time.UTC)
+		if v.Created.Before(endTime) && v.Created.After(startTime) {
+			newWant[k] = v
+		}
+	}
+	want = newWant
+
+	for k, v := range want {
+		fmt.Printf("=== %s %v\n", k, v.Created)
+	}
 	have := make(map[string]google.ManifestInfo)
 	haveTags, err := google.List(newRepo, c.opt.google...)
 	if err != nil {
